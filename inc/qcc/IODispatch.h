@@ -299,7 +299,6 @@ class IODispatch : public Thread, public AlarmListener {
      *                         in the absence of a sink event.
      * @return ER_OK if successful.
      */
-
     QStatus EnableTimeoutCallback(const Source* source, uint32_t linkTimeout = 0);
 
     /**
