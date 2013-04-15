@@ -91,18 +91,21 @@ TEST(TimerTest, SingleThreaded) {
     void* context = (void*) 0x12345678;
     uint32_t timeout = 1000;
     uint32_t zero = 0;
+    GetTimeNow(&ts);
     Alarm a1(timeout, al, context, zero);
+
     status = t1.AddAlarm(a1);
     ASSERT_EQ(ER_OK, status) << "Status: " << QCC_StatusText(status);
-    GetTimeNow(&ts);
+
     ASSERT_TRUE(testNextAlarm(ts + timeout, context));
 
     /* Recurring simple alarm */
     void* vptr = NULL;
+    GetTimeNow(&ts);
     Alarm a2(timeout, al, vptr, timeout);
     status = t1.AddAlarm(a2);
     ASSERT_EQ(ER_OK, status) << "Status: " << QCC_StatusText(status);
-    GetTimeNow(&ts);
+
     ASSERT_TRUE(testNextAlarm(ts + 1000, 0));
     ASSERT_TRUE(testNextAlarm(ts + 2000, 0));
     ASSERT_TRUE(testNextAlarm(ts + 3000, 0));
@@ -183,10 +186,11 @@ TEST(TimerTest, TestReplaceTimer) {
 
 
     uint32_t timeout = 2000;
+    GetTimeNow(&ts);
     Alarm ar1(timeout, al);
     timeout = 5000;
     Alarm ar2(timeout, al);
-    GetTimeNow(&ts);
+
     status = t3.AddAlarm(ar1);
     ASSERT_EQ(ER_OK, status) << "Status: " << QCC_StatusText(status);
     status = t3.ReplaceAlarm(ar1, ar2);
