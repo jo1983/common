@@ -31,7 +31,7 @@
 /***************************
  * STANDARD C++11
  ***************************/
-#if (__cplusplus >= 201100L)
+#if (__cplusplus >= 201100L) && !defined(QCC_OS_DARWIN)
 /*
  * The compiler is conformant to the C++11 standard.  Use unordered_map,
  * etc. directly.
