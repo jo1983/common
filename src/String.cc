@@ -138,7 +138,10 @@ String& String::assign(const char* str, size_t len)
 char& String::operator[](size_t pos)
 {
     if ((context != &nullContext) && (1 != context->refCount)) {
-        NewContext(context->c_str, size(), context->capacity);
+        /* Modifying a context with other refs, so make a copy */
+        ManagedCtx* oldContext = context;
+        NewContext(oldContext->c_str, size(), oldContext->capacity);
+        DecRef(oldContext);
     }
     return context->c_str[pos];
 }
