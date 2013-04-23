@@ -60,7 +60,6 @@ void qcc::Log(int priority, const char* format, ...)
     LoggerSetting* loggerSettings = LoggerSetting::GetLoggerSetting();
     va_list ap;
 
-    va_start(ap, format);
 
     loggerSettings->lock.Lock();
 
@@ -73,7 +72,9 @@ void qcc::Log(int priority, const char* format, ...)
         }
 #else  // QCC_OS_LINUX || QCC_OS_DARWIN
 
+        va_start(ap, format);
         vsyslog(priority, format, ap);
+        va_end(ap);
 
 #endif
 
@@ -82,14 +83,14 @@ void qcc::Log(int priority, const char* format, ...)
 
     if (loggerSettings->UseStdio()) {
         if (priority <= loggerSettings->GetLevel()) {
+            va_start(ap, format);
             vfprintf(loggerSettings->GetFile(), format, ap);
+            va_end(ap);
             fflush(loggerSettings->GetFile());
         }
     }
 
     loggerSettings->lock.Unlock();
-
-    va_end(ap);
 }
 
 
