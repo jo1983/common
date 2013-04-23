@@ -210,6 +210,13 @@ ThreadInternalReturn STDCALL Thread::RunInternal(void* threadArg)
         QCC_DbgPrintf(("Starting thread had NULL thread handle, exiting..."));
     }
 
+    /* Wait for about 100ms max for the thread structure to be initialized.
+     * Typically, this should be initialized by 1ms.
+     */
+    int count = 0;
+    while (!thread->isStopping && (thread->handle == reinterpret_cast<HANDLE>(-1)) && (count++ < 50)) {
+        qcc::Sleep(2);
+    }
     /* Start the thread if it hasn't been stopped and is fully initialized */
     if (!thread->isStopping && NULL != thread->handle) {
         QCC_DbgPrintf(("Starting thread: %s", thread->funcName));
@@ -288,6 +295,7 @@ QStatus Thread::Start(void* arg, ThreadListener* listener)
         this->listener = listener;
 
         state = STARTED;
+        handle = reinterpret_cast<HANDLE>(-1);
         handle = reinterpret_cast<HANDLE>(_beginthreadex(NULL, stacksize, RunInternal, this, 0, &threadId));
         if (handle == 0) {
             state = DEAD;
