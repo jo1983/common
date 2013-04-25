@@ -1039,3 +1039,11 @@ uint32_t IPAddress::GetIPv4AddressNetOrder(void) const
     memcpy(&addr4, &addr[IPv6_SIZE - IPv4_SIZE], IPv4_SIZE);
     return addr4;
 }
+
+qcc::String IPEndpoint::ToString() const
+{
+    String ret = addr.ToString();
+    ret.append(":");
+    ret.append(U32ToString(port, 10));
+    return ret;
+}
