@@ -329,6 +329,11 @@ class IPEndpoint {
      */
     bool operator==(const qcc::IPEndpoint& other) const { return ((addr == other.addr) && (port == other.port)); }
 
+    /**
+     * Human readable version of IPEndpoint.
+     */
+    qcc::String ToString() const;
+
 };
 
 }
