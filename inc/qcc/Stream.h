@@ -186,6 +186,9 @@ class Stream : public Source, public Sink {
   public:
     /** Destructor */
     virtual ~Stream() { }
+
+    /* Close the stream */
+    virtual void Close() { }
 };
 
 }  /* namespace */
