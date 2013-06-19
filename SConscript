@@ -66,7 +66,7 @@ elif env['OS_GROUP'] == 'winrt':
     env.AppendUnique(CFLAGS=['/D_WINRT_DLL'])
     env.AppendUnique(CXXFLAGS=['/D_WINRT_DLL'])	
 elif env['OS'] == 'linux' or env['OS'] == 'openwrt':
-    env.AppendUnique(LIBS =['rt', 'stdc++', 'pthread', 'crypto', 'ssl'])
+    env.AppendUnique(LIBS =['rt', 'stdc++', 'pthread', 'crypto', 'ssl', 'm'])
 elif env['OS'] == 'darwin':
     env.AppendUnique(LIBS =['stdc++', 'pthread', 'crypto', 'ssl'])
     if env['CPU'] == 'arm' or env['CPU'] == 'armv7' or env['CPU'] == 'armv7s':
