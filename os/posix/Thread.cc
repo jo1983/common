@@ -5,7 +5,7 @@
  */
 
 /******************************************************************************
- * Copyright 2009-2012, Qualcomm Innovation Center, Inc.
+ * Copyright 2009-2013, Qualcomm Innovation Center, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -255,7 +255,7 @@ ThreadInternalReturn Thread::RunInternal(void* threadArg)
     return reinterpret_cast<ThreadInternalReturn>(retVal);
 }
 
-static const uint32_t stacksize = 80 * 1024;
+static const uint32_t stacksize = 256 * 1024;
 
 QStatus Thread::Start(void* arg, ThreadListener* listener)
 {
