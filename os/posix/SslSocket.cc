@@ -50,9 +50,30 @@ using namespace std;
 
 namespace qcc {
 
-static int32_t refCount = 0;
+class SslContext {
+  public:
+    SslContext() { ctx = NULL; }
 
-static SSL_CTX* sslCtx = NULL;
+    ~SslContext() {
+        if (ctx) {
+            ERR_free_strings();
+            SSL_CTX_free(ctx);
+            ctx = NULL;
+        }
+    }
+
+    void SetContext(SSL_CTX* ctx)
+    {
+        this->ctx = ctx;
+    }
+
+    SSL_CTX* GetContext() { return ctx; }
+
+  private:
+    SSL_CTX* ctx;
+};
+
+static SslContext sslContext;
 
 struct SslSocket::Internal {
     Internal() : bio(NULL), rootCert(NULL), rootCACert(NULL) { }
@@ -75,14 +96,15 @@ SslSocket::SslSocket(String host) :
     Crypto_ScopedLock lock;
 
     /* Initialize the global SSL context is this is the first SSL socket */
-    if (!sslCtx) {
+    if (sslContext.GetContext() == NULL) {
 
         SSL_library_init();
         SSL_load_error_strings();
         ERR_load_BIO_strings();
         OpenSSL_add_all_algorithms();
-        sslCtx = SSL_CTX_new(SSLv23_client_method());
 
+        sslContext.SetContext(SSL_CTX_new(SSLv23_client_method()));
+        SSL_CTX* sslCtx = sslContext.GetContext();
         if (sslCtx) {
 
             /* Set up our own trust store */
@@ -126,7 +148,6 @@ SslSocket::SslSocket(String host) :
             signal(SIGPIPE, SIG_IGN);
 
         } else {
-            DecrementAndFetch(&refCount);
             QCC_LogError(ER_SSL_INIT, ("SslSocket::SslSocket(): OpenSSL error is \"%s\"", ERR_reason_error_string(ERR_get_error())));
         }
     }
@@ -147,6 +168,7 @@ QStatus SslSocket::Connect(const qcc::String hostName, uint16_t port)
     QStatus status = ER_OK;
 
     /* Sanity check */
+    SSL_CTX* sslCtx = sslContext.GetContext();
     if (!sslCtx) {
         QCC_LogError(ER_SSL_INIT, ("SslSocket::Connect(): SSL failed to initialize"));
         return ER_SSL_INIT;
