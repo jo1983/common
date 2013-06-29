@@ -59,7 +59,7 @@ void WinsockCheck()
 {
     static bool initialized = false;
     if (!initialized) {
-        printf("Initialized winsock\n");
+        QCC_DbgHLPrintf(("Initialized winsock"));
         WSADATA wsaData;
         WORD version = MAKEWORD(2, 0);
         int error = WSAStartup(version, &wsaData);
