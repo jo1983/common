@@ -277,7 +277,7 @@ void IODispatch::AlarmTriggered(const Alarm& alarm, QStatus reason)
         DecrementAndFetch(&numAlarmsInProgress);
         break;
 
-    case IO_WRITE:
+    case IO_WRITE_TIMEOUT:
         /* If this is the write timeout callback, then we must set writeInProgress to true
          * to indicate to the main thread to remove this FD from the set of events it is
          * waiting for.
@@ -291,7 +291,7 @@ void IODispatch::AlarmTriggered(const Alarm& alarm, QStatus reason)
             lock.Lock();
         }
 
-    case IO_WRITE_TIMEOUT:
+    case IO_WRITE:
 
         IncrementAndFetch(&numAlarmsInProgress);
 
@@ -626,6 +626,14 @@ QStatus IODispatch::EnableTimeoutCallback(const Source* source, uint32_t timeout
     if (it == dispatchEntries.end() || (it->second.stopping_state != IO_RUNNING)) {
         lock.Unlock();
         return ER_INVALID_STREAM;
+    }
+
+    /* If a read is in progress, the ReadCallback will take care of adding the
+     * timeout callback for this stream.
+     */
+    if (it->second.readInProgress) {
+        lock.Unlock();
+        return ER_OK;
     }
 
     Alarm prevAlarm = it->second.readAlarm;
