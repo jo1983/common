@@ -9,7 +9,7 @@
 /******************************************************************************
  *
  *
- * Copyright 2009-2011, Qualcomm Innovation Center, Inc.
+ * Copyright 2009-2013, Qualcomm Innovation Center, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ QStatus BufferedSink::PushBytes(const void* dataIn, size_t numBytes, size_t& num
      */
     if (numBytes + curBytes < numBytes) {
         numSent = 0;
-        return ER_PACKET_TOO_LARGE;
+        return ER_BUFFER_TOO_SMALL;
     }
 
     if (curBytes + numBytes < minChunk) {

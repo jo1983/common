@@ -112,7 +112,7 @@ QStatus IODispatch::StartStream(Stream* stream, IOReadListener* readListener, IO
     /* Dont attempt to register a stream if the IODispatch is shutting down */
     if (!isRunning) {
         lock.Unlock();
-        return ER_BUS_STOPPING;
+        return ER_IODISPATCH_STOPPING;
     }
     if (dispatchEntries.find(stream) != dispatchEntries.end()) {
         lock.Unlock();
@@ -555,7 +555,7 @@ QStatus IODispatch::EnableReadCallback(const Source* source, uint32_t timeout)
     /* Dont attempt to modify an entry if the IODispatch is shutting down */
     if (!isRunning) {
         lock.Unlock();
-        return ER_BUS_STOPPING;
+        return ER_IODISPATCH_STOPPING;
     }
     Stream* lookup = (Stream*)source;
     map<Stream*, IODispatchEntry>::iterator it = dispatchEntries.find(lookup);
@@ -617,7 +617,7 @@ QStatus IODispatch::EnableTimeoutCallback(const Source* source, uint32_t timeout
     /* Dont attempt to modify an entry if the IODispatch is shutting down */
     if (!isRunning) {
         lock.Unlock();
-        return ER_BUS_STOPPING;
+        return ER_IODISPATCH_STOPPING;
     }
 
     Stream* lookup = (Stream*)source;
@@ -680,7 +680,7 @@ QStatus IODispatch::DisableReadCallback(const Source* source)
     /* Dont attempt to modify an entry if the IODispatch is shutting down */
     if (!isRunning) {
         lock.Unlock();
-        return ER_BUS_STOPPING;
+        return ER_IODISPATCH_STOPPING;
     }
 
     Stream* lookup = (Stream*)source;
@@ -708,7 +708,7 @@ QStatus IODispatch::EnableWriteCallbackNow(Sink* sink)
     /* Dont attempt to modify an entry if the IODispatch is shutting down */
     if (!isRunning) {
         lock.Unlock();
-        return ER_BUS_STOPPING;
+        return ER_IODISPATCH_STOPPING;
     }
 
     Stream* lookup = (Stream*)sink;
@@ -750,7 +750,7 @@ QStatus IODispatch::EnableWriteCallback(Sink* sink, uint32_t timeout)
     /* Dont attempt to modify an entry if the IODispatch is shutting down */
     if (!isRunning) {
         lock.Unlock();
-        return ER_BUS_STOPPING;
+        return ER_IODISPATCH_STOPPING;
     }
 
     Stream* lookup = (Stream*)sink;
@@ -807,7 +807,7 @@ QStatus IODispatch::DisableWriteCallback(const Sink* sink)
     /* Dont attempt to modify an entry if the IODispatch is shutting down */
     if (!isRunning) {
         lock.Unlock();
-        return ER_BUS_STOPPING;
+        return ER_IODISPATCH_STOPPING;
     }
 
     Stream* lookup = (Stream*)sink;

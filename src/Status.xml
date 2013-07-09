@@ -1,5 +1,5 @@
 <!--
-Copyright 2010 - 2011, Qualcomm Innovation Center, Inc.
+Copyright 2010 - 2013, Qualcomm Innovation Center, Inc.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -82,5 +82,6 @@ Copyright 2010 - 2011, Qualcomm Innovation Center, Inc.
   <status name="ER_THREADPOOL_STOPPING" value="0x1020" comment="Cannot execute a closure on a stopping thread pool"/>
   <status name="ER_INVALID_STREAM" value="0x1021" comment="Attempt to reference non-existent stream entry"/>
   <status name="ER_TIMER_FULL" value="0x1022" comment="Attempt to reference non-existent stream entry"/>
+  <status name="ER_IODISPATCH_STOPPING" value="0x1023" comment="Cannot execute a read or write command on an IODispatch thread because it is stopping."/>
   <status name="ER_NONE" value="0xffff" comment="No error code to report"/>
 </status_block>

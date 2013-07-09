@@ -15,6 +15,7 @@
 import os
 
 Import('env')
+Import('libcommon')
 
 returnValue = []
 
@@ -88,7 +89,7 @@ else:
 
     gtest_obj = gtest_env.StaticObject(target = 'gtest-all', source = [ '%s/src/gtest-all.cc' % gtest_src_base ])
     gtest_env.StaticLibrary(target = 'gtest', source = gtest_obj)
-    
+
     test_src = env.Glob('*.cc')
 
     unittest_env = env.Clone()
@@ -111,7 +112,7 @@ else:
                                      '$ANDROID_SRC/external/openssl/include'])
 
 
-        
+
     #we compile with no rtti and we are not using exceptions.
     unittest_env.Append(CPPDEFINES = ['GTEST_HAS_RTTI=0'])
     
@@ -128,16 +129,24 @@ else:
     #the linker must be able to find stlport for android
     if(env['OS_CONF'] == 'android'):
         unittest_env.Append(LIBPATH = ['$ANDROID_NDK/platforms/android-$ANDROID_API_LEVEL_NDK/arch-%s/usr/lib' % env['CPU']])
-    
+
     # using the alljoyn library to test common since the status object file is not
     # compiled till alljoyn_core is compiled.
-    unittest_env.Prepend(LIBS = ['gtest', 'alljoyn'])
+    unittest_env.Prepend(LIBS = ['gtest', libcommon])
 
-    status_src, status_hdr = unittest_env.Status('../Status')
-    unittest_env.Append(CPPPATH = [ os.path.dirname(str(status_hdr)) ])
+    # If BUILD_COMMON_STATUS is already specified then the status library is built
+    # and linked into libcommon no need to repeat this build build step. If
+    # BUILD_COMMON_STATUS is not specified status will not be linked with libcommon
+    # because it is not built as part of the common build step. And we must add
+    # status to the objs and make sure the header file can be found.
+    if(not env.has_key('BUILD_COMMON_STATUS')):
+        status_src, status_hdr = unittest_env.Status('../Status')
+        unittest_env.Append(CPPPATH = [ os.path.dirname(str(status_hdr)) ])
 
-    objs = [ unittest_env.Object(test_src),
-             unittest_env.Object(status_src) ]
+        objs = [ unittest_env.Object(test_src),
+                 unittest_env.Object(status_src) ]
+    else:
+        objs = [ unittest_env.Object(test_src) ]
 
     unittest_prog = unittest_env.Program('cmtest', objs)
     returnValue = unittest_env.Install('$CPP_TESTDIR/bin', unittest_prog)

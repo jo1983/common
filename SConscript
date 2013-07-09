@@ -133,11 +133,23 @@ if env['OS_GROUP'] == 'winrt':
 
 # Make sure Status never gets included from common for contained projects
 srcs = [ f for f in srcs if basename(str(f)) not in status_src ]
-	
+
 objs = env.Object(srcs)
 
+# under normal build conditions the Status.xml found in alljoyn_core is used to
+# build Status.h and Status.cc.  If we are building the code in common independent
+# of the alljoyn_core we will have to create Status.h and Status.cc for common.
+status_obj = [];
+if(env.has_key('BUILD_COMMON_STATUS')):
+    env.Install('$OBJDIR', env.File('src/Status.xml'))
+    status_src, status_hdr = env.Status('$OBJDIR/Status')
+    status_obj = env.Object(status_src)
+    env.Append(CPPPATH = ['#' + os.path.dirname(str(status_hdr))])
+
+libcommon = env.StaticLibrary('$OBJDIR/common_static', [objs, status_obj])
+
 # Build unit Tests
-env.SConscript('unit_test/SConscript', variant_dir='$OBJDIR/unittest', duplicate=0)
+env.SConscript('unit_test/SConscript', variant_dir='$OBJDIR/unittest', duplicate=0, exports=['libcommon'])
 
 ret = (hdrs, objs)
 
