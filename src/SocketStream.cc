@@ -58,7 +58,8 @@ SocketStream::SocketStream(SocketFd sock) :
     sock(sock),
     sourceEvent(new Event(sock, Event::IO_READ, false)),
     sinkEvent(new Event(*sourceEvent, Event::IO_WRITE, false)),
-    isDetached(false)
+    isDetached(false),
+    sendTimeout(Event::WAIT_FOREVER)
 {
 }
 
@@ -68,7 +69,8 @@ SocketStream::SocketStream(AddressFamily family, SocketType type) :
     sock(MakeSock(family, type)),
     sourceEvent(new Event(sock, Event::IO_READ, false)),
     sinkEvent(new Event(*sourceEvent, Event::IO_WRITE, false)),
-    isDetached(false)
+    isDetached(false),
+    sendTimeout(Event::WAIT_FOREVER)
 {
 }
 
@@ -77,7 +79,8 @@ SocketStream::SocketStream(const SocketStream& other) :
     sock(CopySock(other.sock)),
     sourceEvent(new Event(sock, Event::IO_READ, false)),
     sinkEvent(new Event(*sourceEvent, Event::IO_WRITE, false)),
-    isDetached(other.isDetached)
+    isDetached(other.isDetached),
+    sendTimeout(other.sendTimeout)
 {
 }
 
