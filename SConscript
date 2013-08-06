@@ -22,20 +22,20 @@ env['CRYPTO'] = 'openssl'
 
 # Bullseye code coverage for 'debug' builds.
 if env['VARIANT'] == 'debug':
-    if(not(env.has_key('BULLSEYE_BIN'))):
-        print('BULLSEYE_BIN not specified')
+    if not env.has_key('BULLSEYE_BIN'):
+        print 'BULLSEYE_BIN not specified'
     else:
         env.PrependENVPath('PATH', env.get('BULLSEYE_BIN'))
-        if (not(os.environ.has_key('COVFILE'))):
-            print('Error: COVFILE environment variable must be set')
+        if not os.environ.has_key('COVFILE'):
+            print 'Error: COVFILE environment variable must be set'
             if not GetOption('help'):
                 Exit()
         else:
             env.PrependENVPath('COVFILE', os.environ['COVFILE'])
 
-# Make alljoyn C++ dist a sub-directory of the alljoyn dist.
-env['CPP_DISTDIR'] = env['DISTDIR'] + '/cpp'
-env['CPP_TESTDIR'] = env['TESTDIR'] + '/cpp'
+
+# All AllJoyn subprojects have access to common so add the include path to the global environment
+env.Append(CPPPATH = [env.Dir('inc')])
 
 # Platform specifics for common
 if env['OS_GROUP'] == 'windows':
@@ -60,16 +60,19 @@ if env['OS_GROUP'] == 'windows':
         env.Append(LIBPATH = ['$OPENSSL_BASE/lib'])
         env.AppendUnique(LIBS = ['libeay32', 'ssleay32'])
         print 'Using OPENSSL crypto libraries'
+
 elif env['OS_GROUP'] == 'winrt':
     env['CRYPTO'] = 'winrt'
     print 'Using WINRT crypto libraries'
     env.AppendUnique(CFLAGS=['/D_WINRT_DLL'])
     env.AppendUnique(CXXFLAGS=['/D_WINRT_DLL'])	
-elif env['OS'] == 'linux' or env['OS'] == 'openwrt':
+
+elif env['OS'] in ['linux', 'openwrt']:
     env.AppendUnique(LIBS =['rt', 'stdc++', 'pthread', 'crypto', 'ssl', 'm'])
+
 elif env['OS'] == 'darwin':
     env.AppendUnique(LIBS =['stdc++', 'pthread', 'crypto', 'ssl'])
-    if env['CPU'] == 'arm' or env['CPU'] == 'armv7' or env['CPU'] == 'armv7s':
+    if env['CPU'] in ['arm', 'armv7', 'armv7s']:
         vars = Variables()
         vars.Add(PathVariable('OPENSSL_ROOT', 'Base OpenSSL directory (darwin only)', os.environ.get('OPENSSL_ROOT')))
         vars.Update(env)
@@ -81,73 +84,67 @@ elif env['OS'] == 'darwin':
                 Exit()
         env.Append(CPPPATH = ['$OPENSSL_ROOT/include'])
         env.Append(LIBPATH = ['$OPENSSL_ROOT/build/' + os.environ.get('CONFIGURATION') + '-' + os.environ.get('PLATFORM_NAME')])
+
 elif env['OS'] == 'android':
     env.AppendUnique(LIBS = ['m', 'c', 'stdc++', 'crypto', 'log', 'gcc', 'ssl'])
-    if (env.subst('$ANDROID_NDK_VERSION') == '7' or
-        env.subst('$ANDROID_NDK_VERSION') == '8' or
-        env.subst('$ANDROID_NDK_VERSION') == '8b' or
-        env.subst('$ANDROID_NDK_VERSION') == '8c' or
-        env.subst('$ANDROID_NDK_VERSION') == '8d'):
+    if env.subst('$ANDROID_NDK_VERSION') in ['7', '8', '8b', '8c', '8d']:
         env.AppendUnique(LIBS = ['gnustl_static'])
-else:
-    print 'Unrecognized OS in common: ' + env.subst('$OS')
-    if not GetOption('help'):
-        Exit()
 
 
-
-env.AppendUnique(CPPDEFINES = ['QCC_OS_GROUP_%s' % env['OS_GROUP'].upper()])
+commonenv = env.Clone()
 
 # Variant settings
-env.VariantDir('$OBJDIR', 'src', duplicate = 0)
-env.VariantDir('$OBJDIR/os', 'os/${OS_GROUP}', duplicate = 0)
-env.VariantDir('$OBJDIR/crypto', 'crypto/${CRYPTO}', duplicate = 0)
+commonenv.VariantDir('$OBJDIR', 'src', duplicate = 0)
+commonenv.VariantDir('$OBJDIR/os', 'os/${OS_GROUP}', duplicate = 0)
+commonenv.VariantDir('$OBJDIR/crypto', 'crypto/${CRYPTO}', duplicate = 0)
 
 # Setup dependent include directories
-if env['OS_GROUP'] == 'winrt':
+if commonenv['OS_GROUP'] == 'winrt':
     hdrs = {}
 else:
-    hdrs = { 'qcc': env.File(['inc/qcc/Log.h',
+    hdrs = { 'qcc': commonenv.File(['inc/qcc/Log.h',
                               'inc/qcc/ManagedObj.h',
                               'inc/qcc/String.h',
                               'inc/qcc/atomic.h',
                               'inc/qcc/platform.h']),
-             'qcc/${OS_GROUP}': env.File(['inc/qcc/${OS_GROUP}/atomic.h',
+             'qcc/${OS_GROUP}': commonenv.File(['inc/qcc/${OS_GROUP}/atomic.h',
                                           'inc/qcc/${OS_GROUP}/platform_types.h']) }
 
-if env['OS_GROUP'] == 'windows' or env['OS_GROUP'] == 'win8':
-    hdrs['qcc/${OS_GROUP}'] += env.File(['inc/qcc/${OS_GROUP}/mapping.h'])
-
-env.Append(CPPPATH = [env.Dir('inc')])
+    if commonenv['OS_GROUP'] == 'windows':
+        hdrs['qcc/${OS_GROUP}'] += commonenv.File(['inc/qcc/${OS_GROUP}/mapping.h'])
 
 # Build the sources
 status_cpp0x_src = ['Status_CPP0x.cc', 'StatusComment.cc']
 status_src = ['Status.cc']
 
-srcs = env.Glob('$OBJDIR/*.cc') + env.Glob('$OBJDIR/os/*.cc') + env.Glob('$OBJDIR/crypto/*.cc')
+srcs = commonenv.Glob('$OBJDIR/*.cc') + commonenv.Glob('$OBJDIR/os/*.cc') + commonenv.Glob('$OBJDIR/crypto/*.cc')
 
-if env['OS_GROUP'] == 'winrt':
+if commonenv['OS_GROUP'] == 'winrt':
     srcs = [ f for f in srcs if basename(str(f)) not in status_cpp0x_src ]
 
 # Make sure Status never gets included from common for contained projects
 srcs = [ f for f in srcs if basename(str(f)) not in status_src ]
 
-objs = env.Object(srcs)
+objs = commonenv.Object(srcs)
 
 # under normal build conditions the Status.xml found in alljoyn_core is used to
 # build Status.h and Status.cc.  If we are building the code in common independent
 # of the alljoyn_core we will have to create Status.h and Status.cc for common.
 status_obj = [];
-if(env.has_key('BUILD_COMMON_STATUS')):
-    env.Install('$OBJDIR', env.File('src/Status.xml'))
-    status_src, status_hdr = env.Status('$OBJDIR/Status')
-    status_obj = env.Object(status_src)
-    env.Append(CPPPATH = ['#' + os.path.dirname(str(status_hdr))])
+if commonenv.has_key('BUILD_COMMON_STATUS'):
+    commonenv.Install('$OBJDIR', commonenv.File('src/Status.xml'))
+    status_src, status_hdr = commonenv.Status('$OBJDIR/Status')
+    status_obj = commonenv.Object(status_src)
+    commonenv.Append(CPPPATH = ['#' + os.path.dirname(str(status_hdr))])
 
-libcommon = env.StaticLibrary('$OBJDIR/common_static', [objs, status_obj])
+else:
+    # allow common to "#include <Status.h>" when building all of AllJoyn
+    commonenv.Append(CPPPATH = ['$DISTDIR/cpp/inc/alljoyn'])
+
+libcommon = commonenv.StaticLibrary('$OBJDIR/common_static', [objs, status_obj])
 
 # Build unit Tests
-env.SConscript('unit_test/SConscript', variant_dir='$OBJDIR/unittest', duplicate=0, exports=['libcommon'])
+commonenv.SConscript('unit_test/SConscript', variant_dir='$OBJDIR/unittest', duplicate=0, exports=['libcommon'])
 
 ret = (hdrs, objs)
 

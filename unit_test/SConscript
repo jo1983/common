@@ -17,12 +17,10 @@ import os
 Import('env')
 Import('libcommon')
 
-returnValue = []
-
-if(not(env.has_key('GTEST_DIR'))):
+if not env.has_key('GTEST_DIR'):
     print('GTEST_DIR not specified skipping common unit test build')
 
-elif( env['OS'] == 'darwin' and ( env['CPU'] == 'arm' or env['CPU'] == 'armv7' or env['CPU'] == 'armv7s' ) ):
+elif env['OS'] == 'darwin' and env['CPU'] in ['arm', 'armv7', 'armv7s']:
     # do not even try Google test if darwin and arm
     print 'GTEST_DIR ignored when building for OS=darwin CPU=arm, skipping common unit test build'
 
@@ -38,9 +36,9 @@ else:
     else:
         gtest_src_base = gtest_dir
 
-    if(env['OS_CONF'] == 'android'):
+    if env['OS_CONF'] == 'android':
         # Set the ABI based on the CPU
-        if(env['CPU'] == 'arm'):
+        if env['CPU'] == 'arm':
             android_eabi = 'armeabi'
         else:
             android_eabi = 'x86'
@@ -55,7 +53,7 @@ else:
     else:
         android_cpp_path = None
 
-    if(env['OS_GROUP'] == 'windows'):
+    if env['OS_GROUP'] == 'windows':
         # gTest does not require the same CPPDEFINES as AllJoyn core.
         gtest_env.Append(CPPDEFINES = ['WIN32', '_LIB'])
         # don't use the _DEBUG define unless the /MDd compiler flag is specified
@@ -63,10 +61,10 @@ else:
         gtest_env.Append(CXXFLAGS = ['/EHsc'])
     
     # tr1::tuple is not avalible for android or darwin
-    if(env['OS_CONF'] == 'android' or env['OS_CONF'] == 'darwin'):
+    if env['OS_CONF'] == 'android' or env['OS_CONF'] == 'darwin':
         gtest_env.Append(CPPDEFINES = ['GTEST_HAS_TR1_TUPLE=0'])
     # clone() library function is NOT available on android-x86
-    if(env['OS_CONF'] == 'android' and env['CPU'] == 'x86'):
+    if env['OS_CONF'] == 'android' and env['CPU'] == 'x86':
         gtest_env.Append(CPPDEFINES = ['GTEST_HAS_CLONE=0'])
     # Microsoft Visual Studio 2012 has a different _VARIADIC_MAX default value.
     # See: http://blogs.msdn.com/b/vcblog/archive/2011/09/12/10209291.aspx
@@ -79,7 +77,7 @@ else:
     gtest_env.Replace(CPPPATH = [ gtest_src_base ])
     if gtest_dir != '/usr':
         gtest_env.Append(CPPPATH = [ gtest_env.Dir('$GTEST_DIR/include') ])
-    if(env['OS_CONF'] == 'android'):
+    if env['OS_CONF'] == 'android':
         # Android include paths
         gtest_env.Append(CPPPATH=['$ANDROID_NDK/platforms/android-$ANDROID_API_LEVEL_NDK/arch-%s/usr/include' % env['CPU'],
                                   #Using GNU STL instead of STLPORT
@@ -98,10 +96,10 @@ else:
     if gtest_dir != '/usr':
         unittest_env.Append(CPPPATH = [gtest_dir + '/include'])
 
-    if(env['OS_GROUP'] == 'windows'):
+    if env['OS_GROUP'] == 'windows':
         unittest_env.Append(CXXFLAGS = ['/EHsc'])
 
-    if(env['OS_CONF'] == 'android'):
+    if env['OS_CONF'] == 'android':
         # Android include paths
         unittest_env.Append(CPPPATH=['$ANDROID_NDK/platforms/android-$ANDROID_API_LEVEL_NDK/arch-%s/usr/include' % env['CPU'],
                                      #Using GNU STL instead of STLPORT
@@ -116,18 +114,18 @@ else:
     #we compile with no rtti and we are not using exceptions.
     unittest_env.Append(CPPDEFINES = ['GTEST_HAS_RTTI=0'])
     
-    if(env['OS_CONF'] == 'android' or env['OS_CONF'] == 'darwin'):
+    if env['OS_CONF'] == 'android' or env['OS_CONF'] == 'darwin':
         unittest_env.Append(CPPDEFINES = ['GTEST_HAS_TR1_TUPLE=0'])
-    if(env['OS_CONF'] == 'android' and env['CPU'] == 'x86'):
+    if env['OS_CONF'] == 'android' and env['CPU'] == 'x86':
         unittest_env.Append(CPPDEFINES = ['GTEST_HAS_CLONE=0'])
     if env['OS_CONF'] == 'windows' and env['MSVC_VERSION'] == '11.0':
         unittest_env.Append(CPPDEFINES = ['_VARIADIC_MAX=10'])
     # path for alljoyn library file
-    unittest_env.Append(LIBPATH = ['$CPP_DISTDIR/lib'])
+    unittest_env.Append(LIBPATH = ['$DISTDIR/cpp/lib'])
     # gtest library file is placed in same folder as the the object files.
     unittest_env.Append(LIBPATH = ['./'])
     #the linker must be able to find stlport for android
-    if(env['OS_CONF'] == 'android'):
+    if env['OS_CONF'] == 'android':
         unittest_env.Append(LIBPATH = ['$ANDROID_NDK/platforms/android-$ANDROID_API_LEVEL_NDK/arch-%s/usr/lib' % env['CPU']])
 
     # using the alljoyn library to test common since the status object file is not
@@ -139,7 +137,7 @@ else:
     # BUILD_COMMON_STATUS is not specified status will not be linked with libcommon
     # because it is not built as part of the common build step. And we must add
     # status to the objs and make sure the header file can be found.
-    if(not env.has_key('BUILD_COMMON_STATUS')):
+    if not env.has_key('BUILD_COMMON_STATUS'):
         status_src, status_hdr = unittest_env.Status('../Status')
         unittest_env.Append(CPPPATH = [ os.path.dirname(str(status_hdr)) ])
 
@@ -149,6 +147,4 @@ else:
         objs = [ unittest_env.Object(test_src) ]
 
     unittest_prog = unittest_env.Program('cmtest', objs)
-    returnValue = unittest_env.Install('$CPP_TESTDIR/bin', unittest_prog)
-
-Return('returnValue')
+    unittest_env.Install('$TESTDIR/cpp/bin', unittest_prog)
