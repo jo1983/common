@@ -89,8 +89,6 @@ elif env['OS'] == 'android':
         env.subst('$ANDROID_NDK_VERSION') == '8c' or
         env.subst('$ANDROID_NDK_VERSION') == '8d'):
         env.AppendUnique(LIBS = ['gnustl_static'])
-elif env['OS'] == 'maemo':
-    pass
 else:
     print 'Unrecognized OS in common: ' + env.subst('$OS')
     if not GetOption('help'):
