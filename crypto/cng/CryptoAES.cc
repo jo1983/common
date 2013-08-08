@@ -48,7 +48,7 @@ using namespace qcc;
 static BCRYPT_ALG_HANDLE ecbHandle = 0;
 static BCRYPT_ALG_HANDLE ccmHandle = 0;
 
-class Crypto_AES::KeyState {
+struct Crypto_AES::KeyState {
   public:
 
     KeyState(size_t len) : handle(0) {
