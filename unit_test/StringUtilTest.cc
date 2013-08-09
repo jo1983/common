@@ -36,7 +36,7 @@
  */
 #ifndef NAN
 // IEEE-754 quiet NaN constant for systems that lack one.
-static const unsigned long __qcc_nan = 0x7fffffffff;
+static const unsigned long __qcc_nan = 0x7fffffff;
 #define NAN (*reinterpret_cast<const float*>(&__qcc_nan))
 #endif
 
