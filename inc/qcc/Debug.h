@@ -28,7 +28,6 @@
 
 #include <stdio.h>
 
-#include <Status.h>
 
 /** @internal DEBUG */
 #define QCC_MODULE "DEBUG"
@@ -42,7 +41,11 @@
  *                  String should not end with a new line.
  */
 #if defined(NDEBUG)
-#define QCC_LogError(_status, _msg) do { _QCC_LogError((_status), __FILE__, __LINE__); } while (0)
+#define QCC_LogError(_status, _msg)                                     \
+    do {                                                                \
+        void* ctx = _QCC_DbgPrintContext(" 0x%04x", _status);           \
+        _QCC_DbgPrintProcess(ctx, DBG_LOCAL_ERROR, QCC_MODULE, __FILE__, __LINE__); \
+    } while (0)
 #else
 #define QCC_LogError(_status, _msg)                                     \
     do {                                                                \
@@ -260,16 +263,6 @@ void _QCC_DbgPrintAppend(void* ctx, const char* fmt, ...);
  * @param lineno    Line number where the debug message is.
  */
 void _QCC_DbgPrintProcess(void* ctx, DbgMsgType type, const char* module, const char* filename, int lineno);
-
-/**
- * @internal
- * Minimal error logging for release builds.
- *
- * @param status    The error status code
- * @param filename  Filename where the error is being logged
- * @param lineno    Line number where the error is being logged
- */
-void _QCC_LogError(QStatus status, const char* filename, int lineno);
 
 /**
  * @internal

@@ -103,12 +103,14 @@ if commonenv['OS_GROUP'] == 'winrt':
     hdrs = {}
 else:
     hdrs = { 'qcc': commonenv.File(['inc/qcc/Log.h',
-                              'inc/qcc/ManagedObj.h',
-                              'inc/qcc/String.h',
-                              'inc/qcc/atomic.h',
-                              'inc/qcc/platform.h']),
+                                    'inc/qcc/Debug.h',
+                                    'inc/qcc/ManagedObj.h',
+                                    'inc/qcc/String.h',
+                                    'inc/qcc/StringUtil.h',
+                                    'inc/qcc/atomic.h',
+                                    'inc/qcc/platform.h']),
              'qcc/${OS_GROUP}': commonenv.File(['inc/qcc/${OS_GROUP}/atomic.h',
-                                          'inc/qcc/${OS_GROUP}/platform_types.h']) }
+                                                'inc/qcc/${OS_GROUP}/platform_types.h']) }
 
     if commonenv['OS_GROUP'] == 'windows':
         hdrs['qcc/${OS_GROUP}'] += commonenv.File(['inc/qcc/${OS_GROUP}/mapping.h'])
