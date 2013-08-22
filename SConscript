@@ -86,9 +86,7 @@ elif env['OS'] == 'darwin':
         env.Append(LIBPATH = ['$OPENSSL_ROOT/build/' + os.environ.get('CONFIGURATION') + '-' + os.environ.get('PLATFORM_NAME')])
 
 elif env['OS'] == 'android':
-    env.AppendUnique(LIBS = ['m', 'c', 'stdc++', 'crypto', 'log', 'gcc', 'ssl'])
-    if env.subst('$ANDROID_NDK_VERSION') in ['7', '8', '8b', '8c', '8d']:
-        env.AppendUnique(LIBS = ['gnustl_static'])
+    env.AppendUnique(LIBS = ['m', 'c', 'stdc++', 'crypto', 'log', 'gcc', 'ssl', '$ANDROID_STL'])
 
 
 commonenv = env.Clone()
@@ -115,9 +113,24 @@ else:
     if commonenv['OS_GROUP'] == 'windows':
         hdrs['qcc/${OS_GROUP}'] += commonenv.File(['inc/qcc/${OS_GROUP}/mapping.h'])
 
+
+# under normal build conditions the Status.xml found in alljoyn_core is used to
+# build Status.h and Status.cc.  If we are building the code in common independent
+# of the alljoyn_core we will have to create Status.h and Status.cc for common.
+status_obj = [];
+if commonenv.has_key('BUILD_COMMON_STATUS'):
+    status_src, status_hdr = commonenv.Status('$OBJDIR/Status')
+    status_obj = commonenv.Object(status_src)
+    commonenv.Append(CPPPATH = [os.path.dirname(str(status_hdr))])
+else:
+    # allow common to "#include <Status.h>" when building all of AllJoyn
+    commonenv.Append(CPPPATH = ['$DISTDIR/cpp/inc/alljoyn'])
+
+
 # Build the sources
 status_cpp0x_src = ['Status_CPP0x.cc', 'StatusComment.cc']
 status_src = ['Status.cc']
+
 
 srcs = commonenv.Glob('$OBJDIR/*.cc') + commonenv.Glob('$OBJDIR/os/*.cc') + commonenv.Glob('$OBJDIR/crypto/*.cc')
 
@@ -127,31 +140,18 @@ if commonenv['OS_GROUP'] == 'winrt':
 # Make sure Status never gets included from common for contained projects
 srcs = [ f for f in srcs if basename(str(f)) not in status_src ]
 
-static_objs = env.Object(srcs)
+static_objs = commonenv.Object(srcs)
 
 if commonenv['LIBTYPE'] != 'static':
     shared_objs = commonenv.SharedObject(srcs)
 else:
     shared_objs = []
 
-# under normal build conditions the Status.xml found in alljoyn_core is used to
-# build Status.h and Status.cc.  If we are building the code in common independent
-# of the alljoyn_core we will have to create Status.h and Status.cc for common.
-status_obj = [];
-if commonenv.has_key('BUILD_COMMON_STATUS'):
-    commonenv.Install('$OBJDIR', commonenv.File('src/Status.xml'))
-    status_src, status_hdr = commonenv.Status('$OBJDIR/Status')
-    status_obj = commonenv.Object(status_src)
-    commonenv.Append(CPPPATH = ['#' + os.path.dirname(str(status_hdr))])
-
-else:
-    # allow common to "#include <Status.h>" when building all of AllJoyn
-    commonenv.Append(CPPPATH = ['$DISTDIR/cpp/inc/alljoyn'])
 
 libcommon = commonenv.StaticLibrary('$OBJDIR/common_static', [static_objs, status_obj])
 
 # Build unit Tests
-commonenv.SConscript('unit_test/SConscript', variant_dir='$OBJDIR/unittest', duplicate=0, exports=['libcommon'])
+commonenv.SConscript('unit_test/SConscript', variant_dir='$OBJDIR/unittest', duplicate=0, exports=['commonenv', 'libcommon'])
 
 ret = (hdrs, static_objs, shared_objs)
 
