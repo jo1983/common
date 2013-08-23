@@ -6,7 +6,7 @@
  */
 
 /******************************************************************************
- * Copyright 2009,2012 Qualcomm Innovation Center, Inc.
+ * Copyright 2009,2012-2013 Qualcomm Innovation Center, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@
 #include <qcc/Mutex.h>
 #include <qcc/Debug.h>
 #include <qcc/Crypto.h>
-#include <qcc/RendezvousServerRootCertificate.h>
 
 #include <openssl/bn.h>
 #include <openssl/pem.h>
@@ -41,7 +40,7 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
-#include "Status.h"
+#include <Status.h>
 
 
 #define QCC_MODULE  "SSL"
@@ -83,7 +82,7 @@ struct SslSocket::Internal {
     X509* rootCACert;              /**< Hard-coded Root CA Certificate */
 };
 
-SslSocket::SslSocket(String host) :
+SslSocket::SslSocket(String host, const char* rootCert, const char* caCert) :
     internal(new Internal()),
     sourceEvent(&qcc::Event::neverSet),
     sinkEvent(&qcc::Event::neverSet),
@@ -117,7 +116,7 @@ SslSocket::SslSocket(String host) :
             X509_STORE* sslCtxstore = SSL_CTX_get_cert_store(sslCtx);
 
             /* Convert the PEM-encoded root certificate defined by ServerRootCertificate in to the X509 format*/
-            QStatus status = ImportPEM();
+            QStatus status = ImportPEM(rootCert, caCert);
             if (status == ER_OK) {
 
                 /* Add the root certificate to the current certificate verification storage */
@@ -290,25 +289,19 @@ QStatus SslSocket::PushBytes(const void* buf, size_t numBytes, size_t& numSent)
     return status;
 }
 
-QStatus SslSocket::ImportPEM()
+QStatus SslSocket::ImportPEM(const char* rootCert, const char* caCert)
 {
     /*
      * Protect the open ssl APIs.
      */
     Crypto_ScopedLock lock;
-
-    /* Initialize the appropriate root certificate to be used for HTTPS connection */
-    QStatus status = InitializeServerRootCertificate(Host);
-
-    if (status != ER_OK) {
-        QCC_LogError(status, ("SslSocket::ImportPEM(): %s", QCC_StatusText(status)));
-    }
+    QStatus status;
 
     ERR_load_crypto_strings();
     status = ER_CRYPTO_ERROR;
     BIO* bio = BIO_new(BIO_s_mem());
-    QCC_DbgPrintf(("SslSocket::ImportPEM(): Server = %s Certificate = %s", Host.c_str(), String(ServerRootCertificate).c_str()));
-    BIO_write(bio, ServerRootCertificate, String(ServerRootCertificate).size());
+    QCC_DbgPrintf(("SslSocket::ImportPEM(): Server = %s Certificate = %s", Host.c_str(), rootCert));
+    BIO_write(bio, rootCert, strlen(rootCert));
     internal->rootCert = PEM_read_bio_X509(bio, NULL, NULL, NULL);
     BIO_free(bio);
     if (internal->rootCert) {
@@ -317,8 +310,8 @@ QStatus SslSocket::ImportPEM()
 
     // load the CA certificate as well, to enable verification
     bio = BIO_new(BIO_s_mem());
-    QCC_DbgPrintf(("SslSocket::ImportPEM(): Server = %s Certificate = %s", Host.c_str(), String(ServerCACertificate).c_str()));
-    BIO_write(bio, ServerCACertificate, String(ServerCACertificate).size());
+    QCC_DbgPrintf(("SslSocket::ImportPEM(): Server = %s Certificate = %s", Host.c_str(), caCert));
+    BIO_write(bio, caCert, strlen(caCert));
     internal->rootCACert = PEM_read_bio_X509(bio, NULL, NULL, NULL);
     BIO_free(bio);
 

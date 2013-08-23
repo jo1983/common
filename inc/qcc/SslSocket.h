@@ -6,7 +6,7 @@
  */
 
 /******************************************************************************
- * Copyright 2009,2012 Qualcomm Innovation Center, Inc.
+ * Copyright 2009,2012-2013 Qualcomm Innovation Center, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
 #include <qcc/String.h>
 #include <qcc/Event.h>
 
-#include "Status.h"
+#include <Status.h>
 
 namespace qcc {
 /**
@@ -40,7 +40,7 @@ class SslSocket : public Stream {
   public:
 
     /** Construct an SSL socket. */
-    SslSocket(String host);
+    SslSocket(String host, const char* rootCert, const char* caCert);
 
     /** Destroy SSL socket */
     ~SslSocket();
@@ -98,7 +98,7 @@ class SslSocket : public Stream {
     /**
      * Import a PEM-encoded public key.
      */
-    QStatus ImportPEM(void);
+    QStatus ImportPEM(const char* rootCert, const char* caCert);
 
     /**
      * Return the socketFd for this SslSocket.
