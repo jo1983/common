@@ -26,7 +26,6 @@
 #include <qcc/SslSocket.h>
 #include <qcc/Debug.h>
 #include <qcc/Crypto.h>
-#include <qcc/RendezvousServerRootCertificate.h>
 #include <qcc/winrt/SslSocketWrapper.h>
 #include <qcc/winrt/utility.h>
 
@@ -46,7 +45,7 @@ struct SslSocket::Internal {
     qcc::winrt::SslSocketWrapper ^ socket;
 };
 
-SslSocket::SslSocket(String host) :
+SslSocket::SslSocket(String host, const char* rootCert, const char* caCert) :
     internal(new Internal()),
     sourceEvent(&qcc::Event::neverSet),
     sinkEvent(&qcc::Event::neverSet),
@@ -54,7 +53,7 @@ SslSocket::SslSocket(String host) :
     sock(-1)
 {
     /* Convert the PEM-encoded root certificate defined by ServerRootCertificate into the X509 format*/
-    QStatus status = ImportPEM();
+    QStatus status = ImportPEM(rootCert, caCert);
     if (status == ER_OK) {
         /// Add the certificate to the current certificate storage
         /// NOTE: There is no WinRT API to do this, so the retrieval is currently useless
@@ -163,27 +162,22 @@ QStatus SslSocket::PushBytes(const void* buf, size_t numBytes, size_t& numSent)
     return status;
 }
 
-QStatus SslSocket::ImportPEM()
+QStatus SslSocket::ImportPEM(const char* rootCert, const char* caCert)
 {
-    /* Initialize the appropriate root certificate to be used for HTTPS connection */
-    QStatus status = InitializeServerRootCertificate(Host);
-
-    if (status != ER_OK) {
-        QCC_LogError(status, ("SslSocket::ImportPEM(): %s", QCC_StatusText(status)));
-    }
+    QStatus status;
 
     status = ER_CRYPTO_ERROR;
-    QCC_DbgPrintf(("SslSocket::ImportPEM(): Server = %s Certificate = %s", Host.c_str(), String(ServerRootCertificate).c_str()));
+    QCC_DbgPrintf(("SslSocket::ImportPEM(): Server = %s Certificate = %s", Host.c_str(), rootCert));
 
-    status = internal->rootCert.ImportPEM(qcc::String(ServerRootCertificate));
+    status = internal->rootCert.ImportPEM(qcc::String(rootCert));
     if (status != ER_OK) {
         QCC_LogError(status, ("SslSocket::ImportPEM(): ServerRootCertificate invalid %s", QCC_StatusText(status)));
     }
 
     // load the CA certificate as well, to enable verification
-    QCC_DbgPrintf(("SslSocket::ImportPEM(): Server = %s Certificate = %s", Host.c_str(), String(ServerCACertificate).c_str()));
+    QCC_DbgPrintf(("SslSocket::ImportPEM(): Server = %s Certificate = %s", Host.c_str(), caCert));
 
-    status = internal->rootCert.ImportPEM(qcc::String(ServerCACertificate));
+    status = internal->rootCert.ImportPEM(qcc::String(caCert));
     if (status != ER_OK) {
         QCC_LogError(status, ("SslSocket::ImportPEM(): RendezvousServerCACertificate invalid %s", QCC_StatusText(status)));
     }

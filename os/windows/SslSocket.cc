@@ -31,7 +31,7 @@
 
 namespace qcc {
 
-SslSocket::SslSocket(String host) :
+SslSocket::SslSocket(String host, const char* rootCert, const char* caCert) :
     internal(NULL),
     sourceEvent(&qcc::Event::neverSet),
     sinkEvent(&qcc::Event::neverSet),
@@ -63,7 +63,7 @@ QStatus SslSocket::PushBytes(const void* buf, size_t numBytes, size_t& numSent)
     return ER_FAIL;
 }
 
-QStatus SslSocket::ImportPEM()
+QStatus SslSocket::ImportPEM(const char* rootCert, const char* caCert)
 {
     return ER_FAIL;
 }
