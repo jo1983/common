@@ -191,6 +191,17 @@ class Stream : public Source, public Sink {
     virtual void Close() { }
 };
 
+/**
+ * NonBlockingStream is a type of stream that is not blocking i.e. Reads/Writes will return immediately.
+ */
+class NonBlockingStream : public Stream {
+  public:
+    /** Destructor */
+    virtual ~NonBlockingStream() { }
+
+    /* Close the stream */
+    virtual void Close() { }
+};
 }  /* namespace */
 
 #endif

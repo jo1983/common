@@ -104,7 +104,7 @@ QStatus IODispatch::Join()
     return ER_OK;
 }
 
-QStatus IODispatch::StartStream(Stream* stream, IOReadListener* readListener, IOWriteListener* writeListener, IOExitListener* exitListener)
+QStatus IODispatch::StartStream(Stream* stream, IOReadListener* readListener, IOWriteListener* writeListener, IOExitListener* exitListener, bool readEnable, bool writeEnable)
 {
     QCC_DbgTrace(("StartStream %p", stream));
 
@@ -119,7 +119,7 @@ QStatus IODispatch::StartStream(Stream* stream, IOReadListener* readListener, IO
         return ER_INVALID_STREAM;
 
     }
-    dispatchEntries[stream] = IODispatchEntry(stream, readListener, writeListener, exitListener);
+    dispatchEntries[stream] = IODispatchEntry(stream, readListener, writeListener, exitListener, readEnable, writeEnable);
     dispatchEntries[stream].readCtxt = new CallbackContext(stream, IO_READ);
     dispatchEntries[stream].writeCtxt = new CallbackContext(stream, IO_WRITE);
     dispatchEntries[stream].writeTimeoutCtxt = new CallbackContext(stream, IO_WRITE_TIMEOUT);

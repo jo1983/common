@@ -83,5 +83,13 @@ Copyright 2010 - 2013, Qualcomm Innovation Center, Inc.
   <status name="ER_INVALID_STREAM" value="0x1021" comment="Attempt to reference non-existent stream entry"/>
   <status name="ER_TIMER_FULL" value="0x1022" comment="Attempt to reference non-existent stream entry"/>
   <status name="ER_IODISPATCH_STOPPING" value="0x1023" comment="Cannot execute a read or write command on an IODispatch thread because it is stopping."/>
+  <status name="ER_SLAP_INVALID_PACKET_LEN" value="0x1024" comment="Length of SLAP packet is invalid."/>
+  <status name="ER_SLAP_HDR_CHECKSUM_ERROR" value="0x1025" comment="SLAP packet header checksum error."/>
+  <status name="ER_SLAP_INVALID_PACKET_TYPE" value="0x1026" comment="Invalid SLAP packet type."/>
+  <status name="ER_SLAP_LEN_MISMATCH" value="0x1027" comment="Calculated length does not match the received length."/>
+  <status name="ER_SLAP_PACKET_TYPE_MISMATCH" value="0x1028" comment="Packet type does not match reliability bit."/>
+  <status name="ER_SLAP_CRC_ERROR" value="0x1029" comment="SLAP packet CRC error."/>
+  <status name="ER_SLAP_ERROR" value="0x102A" comment="Generic SLAP error."/>
+  <status name="ER_SLAP_OTHER_END_CLOSED" value="0x102B" comment="Other end closed the SLAP connection"/>
   <status name="ER_NONE" value="0xffff" comment="No error code to report"/>
 </status_block>

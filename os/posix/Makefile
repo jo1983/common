@@ -20,12 +20,14 @@ all: oslib
 
 ifeq "$(OS)" "linux"
   IFCONFIG=IfConfigLinux
+  UARTSTREAM=UARTStreamLinux
 else
   IFCONFIG=IfConfigDarwin
+  UARTSTREAM=UARTStreamDarwin
 endif
 
-oslib:  \
-	atomic.o \
+oslib: \
+        atomic.o \
 	Environ.o \
 	Event.o \
 	FileStream.o \
@@ -37,7 +39,8 @@ oslib:  \
 	SslSocket.o \
 	Thread.o \
 	time.o \
-	Timer.o
+	Timer.o \
+	$(UARTSTREAM).o
 
 %.o:%.cc
 	$(CC) $(INCLUDE) $(CXXFLAGS) $(CPPDEFINES)  -c -o $@ $<

@@ -35,6 +35,8 @@ commonsrc: \
 	Logger.o \
 	Makefile \
 	Pipe.o \
+	SLAPPacket.o \
+	SLAPStream.o \
 	SocketStream.o \
 	Stream.o \
 	StreamPump.o \
