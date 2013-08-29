@@ -7,7 +7,7 @@
  */
 
 /******************************************************************************
- * Copyright 2009-2011, Qualcomm Innovation Center, Inc.
+ * Copyright 2009-2011,2013, Qualcomm Innovation Center, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ typedef unsigned long long uint64_t;  ///< 64-bit unsigned integer.
 
 namespace qcc {
 typedef UINT_PTR SocketFd;                ///< Socket file descriptor type. */
+typedef UINT_PTR UARTFd;                  ///< UART file descriptor type. */
 }
 
 /* Some windows header files define min and max as macros */

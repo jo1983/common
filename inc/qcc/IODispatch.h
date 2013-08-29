@@ -226,7 +226,7 @@ class IODispatch : public Thread, public AlarmListener {
      * @param linkTimeout      The timeout for this link - determines when a timeout event will be fired.
      * @return ER_OK if successful.
      */
-    QStatus StartStream(Stream* stream, IOReadListener* readListener, IOWriteListener* writeListener, IOExitListener* exitListener);
+    QStatus StartStream(Stream* stream, IOReadListener* readListener, IOWriteListener* writeListener, IOExitListener* exitListener, bool readEnable = true, bool writeEnable = true);
 
     /**
      * Stop a stream previously started with this IODispatch.

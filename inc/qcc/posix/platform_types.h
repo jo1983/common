@@ -7,7 +7,7 @@
  */
 
 /******************************************************************************
- * Copyright 2009-2011, Qualcomm Innovation Center, Inc.
+ * Copyright 2009-2011,2013, Qualcomm Innovation Center, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -32,9 +32,11 @@
 #ifdef __cplusplus
 namespace qcc {
 typedef int SocketFd;      /**< Socket file descriptor type. */
+typedef int UARTFd;      /**< UART file descriptor type. */
 }
 #else
 typedef int qcc_SocketFd; /**< Socket file descriptor type. */
+typedef int qcc_UARTFd; /**< UART file descriptor type. */
 #endif
 
 #endif
