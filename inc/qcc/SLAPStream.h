@@ -108,6 +108,13 @@ class SLAPStream : public Stream, public UARTReadListener, public AlarmListener 
     /** Private copy constructor */
     SLAPStream(const SLAPStream& other);
 
+    /**
+     * Private Assignment operator - does nothing.
+     *
+     * @param other  SLAPStream to assign from.
+     */
+    SLAPStream operator=(const SLAPStream& other) { return *this; };
+
     /** Internal functions used by SLAPStream */
     void EnqueueCtrl(ControlPacketType type, uint8_t* config = NULL);
     void TransmitToLink(void);

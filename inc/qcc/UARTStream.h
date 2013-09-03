@@ -89,7 +89,24 @@ class UARTStream : public NonBlockingStream {
     Event& GetSinkEvent() { return *sinkEvent; }
     UARTFd GetFD() { return fd; }
   private:
-    UARTStream() : fd(-1) { }
+
+    /** Private default constructor - does nothing */
+    UARTStream();
+
+    /**
+     * Private Copy-constructor - does nothing
+     *
+     * @param other  UARTStream to copy from.
+     */
+    UARTStream(const UARTStream& other);
+
+    /**
+     * Private Assignment operator - does nothing.
+     *
+     * @param other  UARTStream to assign from.
+     */
+    UARTStream operator=(const UARTStream& other) { return *this; };
+
     int fd;             /**< File descriptor associated with the device */
     Event* sourceEvent; /**< Event signaled when data is available */
     Event* sinkEvent;   /**< Event signaled when sink can accept data */
