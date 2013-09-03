@@ -188,17 +188,6 @@ QStatus SLAPReadPacket::Validate()
         QCC_LogError(ER_OK, ("Short packet %d\n", m_totalLen));
         return ER_SLAP_INVALID_PACKET_LEN;
     }
-
-    /*
-     * Parse packet header.
-     */
-    m_ackNum = m_buffer[0] & 0x0F;
-    m_sequenceNum = (m_buffer[0] >> 4) & 0x0F;
-    m_packetType = (PacketType)(m_buffer[1] & 0x0F);
-    if ((m_packetType != RELIABLE_DATA_PACKET) && (m_packetType != ACK_PACKET) && (m_packetType > CTRL_PACKET)) {
-        m_packetType = INVALID_PACKET;
-        return ER_SLAP_INVALID_PACKET_TYPE;
-    }
     /*
      * The last two bytes of the packet
      * are the CRC and are not counted in the packet header length.
@@ -226,6 +215,18 @@ QStatus SLAPReadPacket::Validate()
 
     if (status == ER_OK) {
         /*
+         * Parse packet header.
+         */
+        m_ackNum = m_buffer[0] & 0x0F;
+        m_sequenceNum = (m_buffer[0] >> 4) & 0x0F;
+        m_packetType = (PacketType)(m_buffer[1] & 0x0F);
+        if ((m_packetType != RELIABLE_DATA_PACKET) && (m_packetType != ACK_PACKET) && (m_packetType != CTRL_PACKET)) {
+            m_packetType = INVALID_PACKET;
+            status = ER_SLAP_INVALID_PACKET_TYPE;
+        }
+    }
+    if (status == ER_OK) {
+        /*
          * Check that the payload length in the header matches the bytes read.
          */
         expectedLen = (m_buffer[2] << 8) | m_buffer[3];
@@ -234,6 +235,7 @@ QStatus SLAPReadPacket::Validate()
             status = ER_SLAP_LEN_MISMATCH;
         }
     }
+
     if (status == ER_OK) {
 
         switch (m_packetType) {
