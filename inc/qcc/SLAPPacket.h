@@ -135,6 +135,24 @@ class SLAPReadPacket {
     bool FillBuffer(void* buf, size_t reqBytes, size_t& actualBytes);
 
   private:
+
+    /** Private default constructor - does nothing */
+    SLAPReadPacket();
+
+    /**
+     * Private Copy-constructor - does nothing
+     *
+     * @param other  SLAPReadPacket to copy from.
+     */
+    SLAPReadPacket(const SLAPReadPacket& other);
+
+    /**
+     * Private Assignment operator - does nothing.
+     *
+     * @param other  SLAPReadPacket to assign from.
+     */
+    SLAPReadPacket operator=(const SLAPReadPacket& other) { return *this; };
+
     enum PACKET_READ_STATE {
         PACKET_NEW,
         PACKET_OPEN,
@@ -242,6 +260,24 @@ class SLAPWritePacket {
      */
     void SlipPayload();
   private:
+
+    /** Private default constructor - does nothing */
+    SLAPWritePacket();
+
+    /**
+     * Private Copy-constructor - does nothing
+     *
+     * @param other  SLAPWritePacket to copy from.
+     */
+    SLAPWritePacket(const SLAPWritePacket& other);
+
+    /**
+     * Private Assignment operator - does nothing.
+     *
+     * @param other  SLAPWritePacket to assign from.
+     */
+    SLAPWritePacket operator=(const SLAPWritePacket& other) { return *this; };
+
     size_t m_maxPacketSize;               /**< Maximum packet size supported. */
 
     uint8_t m_ackNum;                     /**< Acknowledge number contained in this packet */

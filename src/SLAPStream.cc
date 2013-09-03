@@ -121,6 +121,11 @@ SLAPStream::~SLAPStream()
 
     delete m_rxCurrent;
     delete m_txCtrl;
+
+    delete m_sendDataCtxt;
+    delete m_resendDataCtxt;
+    delete m_ackCtxt;
+    delete m_resendControlCtxt;
 }
 
 QStatus SLAPStream::PullBytes(void* buf, size_t reqBytes, size_t& actualBytes, uint32_t timeout)
@@ -853,11 +858,10 @@ void SLAPStream::AlarmTriggered(const Alarm& alarm, QStatus reason)
          */
         if (!m_txSent.empty()) {
             std::list<SLAPWritePacket*>::iterator it = m_txQueue.begin();
-            if (m_txQueue.front() == m_txCtrl) {
-
-                m_txQueue.insert(++it, m_txSent.begin(), m_txSent.end());
-            } else {
+            if ((it == m_txQueue.end()) || (m_txQueue.front() != m_txCtrl)) {
                 m_txQueue.insert(it, m_txSent.begin(), m_txSent.end());
+            } else {
+                m_txQueue.insert(++it, m_txSent.begin(), m_txSent.end());
             }
             m_txSent.clear();
             /*
