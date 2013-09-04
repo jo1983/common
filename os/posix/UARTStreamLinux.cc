@@ -27,7 +27,7 @@
 #include <termios.h>
 #include <signal.h>
 #include <sys/types.h>
-
+#include <sys/file.h>
 
 #define QCC_MODULE "UART"
 
@@ -42,8 +42,17 @@ QStatus UART(qcc::String devName, uint32_t speed, UARTFd& fd)
         QCC_LogError(ER_OS_ERROR, ("failed to open serial device %s. ret = %d, %d - %s", devName.c_str(), ret, errno, strerror(errno)));
         return ER_OS_ERROR;
     }
-    QCC_DbgPrintf(("opened serial device %s successfully. ret = %d", devName.c_str(), ret));
     fd = ret;
+
+    /* Lock this FD, to ensure exclusive access to this serial port. */
+    ret = flock(fd, LOCK_EX | LOCK_NB);
+    if (ret) {
+        fd = -1;
+        QCC_LogError(ER_OS_ERROR, ("Lock fd %d failed with '%s'", fd, strerror(errno)));
+        return ER_OS_ERROR;
+    }
+
+    QCC_DbgPrintf(("opened serial device %s successfully. ret = %d", devName.c_str(), ret));
 
     speed_t baudrate;
     /**
@@ -181,6 +190,8 @@ QStatus UARTStream::PullBytes(void* buf, size_t numBytes, size_t& actualBytes, u
 void UARTStream::Close() {
     QCC_DbgPrintf(("Uart::close()"));
     if (fd != -1) {
+        /* Release the lock on this FD */
+        flock(fd, LOCK_UN);
         close(fd);
         fd = -1;
     }
