@@ -30,9 +30,11 @@ TEST(UARTTest, DISABLED_uart_large_buffer_test)
     UARTFd fd0;
     UARTFd fd1;
     QStatus status = UART("/tmp/COM0", 115200, fd0);
-    EXPECT_EQ(status, ER_OK);
+    ASSERT_EQ(status, ER_OK);
+
     status = UART("/tmp/COM1", 115200, fd1);
-    EXPECT_EQ(status, ER_OK);
+    ASSERT_EQ(status, ER_OK);
+
     UARTStream* s = new UARTStream(fd0);
     UARTStream* s1 = new UARTStream(fd1);
     SLAPStream h(s, timer, PACKET_SIZE);
@@ -93,7 +95,11 @@ TEST(UARTTest, DISABLED_uart_small_buffer_test)
     UARTFd fd0;
     UARTFd fd1;
     QStatus status = UART("/tmp/COM0", 115200, fd0);
+    ASSERT_EQ(status, ER_OK);
+
     status = UART("/tmp/COM1", 115200, fd1);
+    ASSERT_EQ(status, ER_OK);
+
     UARTStream* s = new UARTStream(fd0);
     UARTStream* s1 = new UARTStream(fd1);
     /* Test different packet size and window size values */
@@ -192,7 +198,7 @@ TEST(UARTTest, DISABLED_serial_testrecv) {
     }
     UARTFd fd0;
     QStatus status = UART("/tmp/COM0", 115200, fd0);
-    EXPECT_EQ(status, ER_OK);
+    ASSERT_EQ(status, ER_OK);
 
     UARTStream* s = new UARTStream(fd0);
     SLAPStream h(s, timer, PACKET_SIZE);
@@ -283,7 +289,7 @@ TEST(UARTTest, DISABLED_serial_testsend) {
     size_t x;
     UARTFd fd1;
     QStatus status = UART("/tmp/COM1", 115200, fd1);
-    EXPECT_EQ(status, ER_OK);
+    ASSERT_EQ(status, ER_OK);
 
     UARTStream* s1 = new UARTStream(fd1);
     SLAPStream h1(s1, timer, PACKET_SIZE);
@@ -343,7 +349,7 @@ TEST(UARTTest, DISABLED_serial_testrecv_ajtcl) {
 
     UARTFd fd0;
     QStatus status = UART("/tmp/COM0", 115200, fd0);
-    EXPECT_EQ(status, ER_OK);
+    ASSERT_EQ(status, ER_OK);
 
     UARTStream* s = new UARTStream(fd0);
     SLAPStream h(s, timer, PACKET_SIZE);
@@ -400,7 +406,7 @@ TEST(UARTTest, DISABLED_serial_testsend_ajtcl)
 
     UARTFd fd1;
     QStatus status = UART("/tmp/COM1", 115200, fd1);
-    EXPECT_EQ(status, ER_OK);
+    ASSERT_EQ(status, ER_OK);
 
     UARTStream* s1 = new UARTStream(fd1);
     SLAPStream h1(s1, timer, PACKET_SIZE);
