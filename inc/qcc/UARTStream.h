@@ -46,10 +46,10 @@ class UARTStream : public NonBlockingStream {
 
     UARTStream(UARTFd fd);
 
-    ~UARTStream();
+    virtual ~UARTStream();
 
     /* Close the fd */
-    void Close();
+    virtual void Close();
 
     /**
      * Pull bytes from the stream.
@@ -62,7 +62,7 @@ class UARTStream : public NonBlockingStream {
      * Note: Since this is a non-blocking stream, this parameter is ignored.
      * @return   ER_OK if successful. ER_NONE if source is exhausted. Otherwise an error.
      */
-    QStatus PullBytes(void* buf, size_t numBytes, size_t& actualBytes, uint32_t timeout = 0);
+    virtual QStatus PullBytes(void* buf, size_t numBytes, size_t& actualBytes, uint32_t timeout = 0);
 
     /**
      * Push zero or more bytes into the sink with infinite ttl.
@@ -72,21 +72,22 @@ class UARTStream : public NonBlockingStream {
      * @param numSent      Number of bytes actually consumed by sink.
      * @return   ER_OK if successful.
      */
-    QStatus PushBytes(const void* buf, size_t numBytes, size_t& actualBytes);
+    virtual QStatus PushBytes(const void* buf, size_t numBytes, size_t& actualBytes);
 
     /**
      * Get the Event indicating that data is available.
      *
      * @return Event that is set when data is available.
      */
-    Event& GetSourceEvent() { return *sourceEvent; }
+    virtual Event& GetSourceEvent() { return *sourceEvent; }
 
     /**
      * Get the Event indicating that sink can accept data.
      *
      * @return Event set when socket can accept more data via PushBytes
      */
-    Event& GetSinkEvent() { return *sinkEvent; }
+    virtual Event& GetSinkEvent() { return *sinkEvent; }
+
     UARTFd GetFD() { return fd; }
   private:
     UARTStream() : fd(-1) { }
