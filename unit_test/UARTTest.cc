@@ -21,6 +21,7 @@
 #include <qcc/UARTStream.h>
 #include <qcc/SLAPStream.h>
 #define PACKET_SIZE 100
+#define RANDOM_BYTES_MAX 5000
 using namespace qcc;
 
 TEST(UARTTest, DISABLED_uart_large_buffer_test)
@@ -434,3 +435,120 @@ TEST(UARTTest, DISABLED_serial_testsend_ajtcl)
     h1.Close();
     delete s1;
 }
+TEST(UARTTest, DISABLED_serial_testrandomecho) {
+    Timer timer("SLAPtimer", true, 4, false, 10);
+    timer.Start();
+    uint8_t rxBuffer[RANDOM_BYTES_MAX];
+    memset(&rxBuffer, '\0', sizeof(rxBuffer));
+
+    int blocksize = 100;
+
+    size_t x;
+    UARTFd fd1;
+    QStatus status = UART("/tmp/COM1", 115200, fd1);
+    ASSERT_EQ(status, ER_OK);
+
+    UARTStream* s1 = new UARTStream(fd1);
+    SLAPStream h1(s1, timer, PACKET_SIZE);
+    h1.ScheduleLinkControlPacket();
+
+    IODispatch iodisp("iodisp", 4);
+    iodisp.Start();
+
+    UARTController uc(s1, iodisp, &h1);
+    uc.Start();
+    int iter = 0;
+    size_t actual;
+    while (1) {
+        printf("iteration %d\n", iter);
+        status = h1.PullBytes(rxBuffer, RANDOM_BYTES_MAX, x, 5000);
+        if (status == ER_TIMEOUT) {
+            continue;
+        }
+        if (status != ER_OK) {
+            printf("Failed PullBytes status = %s\n", QCC_StatusText(status));
+            break;
+        }
+        iter++;
+        /* Echo same bytes back to sender */
+        h1.PushBytes(rxBuffer, x, actual);
+        EXPECT_EQ(x, actual);
+
+        printf("\n");
+
+    }
+    /* Wait for retransmission to finish */
+    qcc::Sleep(4000);
+
+    timer.Stop();
+    uc.Stop();
+    iodisp.Stop();
+
+    timer.Join();
+    uc.Join();
+    iodisp.Join();
+
+    h1.Close();
+    delete s1;
+}
+TEST(UARTTest, DISABLED_serial_testsendrecv) {
+    Timer timer("SLAPtimer", true, 4, false, 10);
+    timer.Start();
+    uint8_t rxBuffer[RANDOM_BYTES_MAX];
+    memset(&rxBuffer, 'R', sizeof(rxBuffer));
+
+    uint8_t txBuffer[RANDOM_BYTES_MAX];
+    memset(&txBuffer, 'T', sizeof(txBuffer));
+
+    int blocksize = 100;
+    for (int blocks = 0; blocks < 16; blocks++) {
+        memset(txBuffer + (blocks * blocksize), 0x41 + (uint8_t)blocks, blocksize);
+    }
+    size_t x;
+    UARTFd fd1;
+    QStatus status = UART("/tmp/COM1", 115200, fd1);
+    ASSERT_EQ(status, ER_OK);
+
+    UARTStream* s1 = new UARTStream(fd1);
+    SLAPStream h1(s1, timer, PACKET_SIZE);
+    h1.ScheduleLinkControlPacket();
+
+    IODispatch iodisp("iodisp", 4);
+    iodisp.Start();
+
+    UARTController uc(s1, iodisp, &h1);
+    uc.Start();
+    int iter = 0;
+    size_t txlen;
+    while (1) {
+        printf("iteration %d\n", iter);
+        iter++;
+        txlen = rand() % RANDOM_BYTES_MAX;
+        for (int i = 0; i < txlen; i++) {
+            txBuffer[i] = rand() % 256;
+        }
+        /* Send bytes */
+        h1.PushBytes(txBuffer, txlen, x);
+        EXPECT_EQ(x, txlen);
+
+        /* Read bytes back */
+        status = h1.PullBytes(rxBuffer, txlen, x);
+        EXPECT_EQ(x, txlen);
+        EXPECT_EQ(memcmp(txBuffer, rxBuffer, txlen), 0);
+
+    }
+    /* Wait for retransmission to finish */
+    qcc::Sleep(4000);
+
+    timer.Stop();
+    uc.Stop();
+    iodisp.Stop();
+
+    timer.Join();
+    uc.Join();
+    iodisp.Join();
+
+    h1.Close();
+    delete s1;
+}
+
