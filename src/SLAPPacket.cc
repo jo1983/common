@@ -185,7 +185,7 @@ QStatus SLAPReadPacket::Validate()
         /*
          * Packet is too small.
          */
-        QCC_LogError(ER_OK, ("Short packet %d\n", m_totalLen));
+        QCC_LogError(ER_SLAP_INVALID_PACKET_LEN, ("Short packet %d\n", m_totalLen));
         return ER_SLAP_INVALID_PACKET_LEN;
     }
     /*
@@ -209,7 +209,7 @@ QStatus SLAPReadPacket::Validate()
      * Check the computed and received CRC's match.
      */
     if ((rcvdCrc[0] != checkCrc[0]) || (rcvdCrc[1] != checkCrc[1])) {
-        QCC_LogError(ER_OK, ("Data integrity error - discarding packet %X %X, %X %X", rcvdCrc[0], rcvdCrc[1], checkCrc[0], checkCrc[1]));
+        QCC_LogError(ER_SLAP_CRC_ERROR, ("Data integrity error - discarding packet %X %X, %X %X", rcvdCrc[0], rcvdCrc[1], checkCrc[0], checkCrc[1]));
         status = ER_SLAP_CRC_ERROR;
     }
 
@@ -231,7 +231,7 @@ QStatus SLAPReadPacket::Validate()
          */
         expectedLen = (m_buffer[2] << 8) | m_buffer[3];
         if (expectedLen != (m_totalLen - SLAP_HDR_LEN)) {
-            QCC_LogError(ER_OK, ("Wrong packet length header says %d read %d bytes.\n", expectedLen, m_totalLen - SLAP_HDR_LEN));
+            QCC_LogError(ER_SLAP_LEN_MISMATCH, ("Wrong packet length header says %d read %d bytes.\n", expectedLen, m_totalLen - SLAP_HDR_LEN));
             status = ER_SLAP_LEN_MISMATCH;
         }
     }
