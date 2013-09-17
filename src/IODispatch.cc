@@ -408,45 +408,50 @@ ThreadReturn STDCALL IODispatch::Run(void* arg) {
         crit = false;
         reload = true;
 
-        it = dispatchEntries.begin();
-        /* Add exit alarms for any streams that are being stopped.
-         * We dont need to keep track of the exit alarm, since we never remove
-         * the exit alarm. Hence it is not a part of IODispatchEntry.
-         */
-        while (it != dispatchEntries.end() && isRunning) {
-            if (it->second.stopping_state == IO_STOPPING) {
-                Alarm exitAlarm = Alarm(when, listener, it->second.exitCtxt);
-                Stream* lookup = it->first;
-                QStatus status = ER_TIMER_FULL;
-                while (isRunning && status == ER_TIMER_FULL && it != dispatchEntries.end() && it->second.stopping_state != IO_STOPPED) {
-                    /* Call the non-blocking version of AddAlarm, while holding the
-                     * locks to ensure that the state of the dispatchEntry is valid.
-                     */
-                    status = timer.AddAlarmNonBlocking(exitAlarm);
-
-                    if (status == ER_TIMER_FULL) {
-                        lock.Unlock();
-                        qcc::Sleep(2);
-                        lock.Lock();
-                    }
-                    it = dispatchEntries.find(lookup);
-                }
-                if (status == ER_OK && it != dispatchEntries.end()) {
-                    it->second.stopping_state = IO_STOPPED;
-                    it++;
-                }
-
-            } else {
-                it++;
-            }
-        }
         lock.Unlock();
         for (vector<qcc::Event*>::iterator i = signaledEvents.begin(); i != signaledEvents.end(); ++i) {
             if (*i == &stopEvent) {
                 /* This thread has been alerted or is being stopped. Will check the IsStopping()
-                 * flag when the while condition is encountered
+                 * flag when the while condition is encountered.
+                 * Note that the stop event must be reset before adding the exit alarms to ensure that
+                 * exit alarms are added for all streams that are stopped within close duration of each other.
                  */
+                lock.Lock();
                 stopEvent.ResetEvent();
+
+                it = dispatchEntries.begin();
+                /* Add exit alarms for any streams that are being stopped.
+                 * We dont need to keep track of the exit alarm, since we never remove
+                 * the exit alarm. Hence it is not a part of IODispatchEntry.
+                 */
+                while (it != dispatchEntries.end() && isRunning) {
+                    if (it->second.stopping_state == IO_STOPPING) {
+                        Alarm exitAlarm = Alarm(when, listener, it->second.exitCtxt);
+                        Stream* lookup = it->first;
+                        QStatus status = ER_TIMER_FULL;
+                        while (isRunning && status == ER_TIMER_FULL && it != dispatchEntries.end() && it->second.stopping_state != IO_STOPPED) {
+                            /* Call the non-blocking version of AddAlarm, while holding the
+                             * locks to ensure that the state of the dispatchEntry is valid.
+                             */
+                            status = timer.AddAlarmNonBlocking(exitAlarm);
+
+                            if (status == ER_TIMER_FULL) {
+                                lock.Unlock();
+                                qcc::Sleep(2);
+                                lock.Lock();
+                            }
+                            it = dispatchEntries.find(lookup);
+                        }
+                        if (status == ER_OK && it != dispatchEntries.end()) {
+                            it->second.stopping_state = IO_STOPPED;
+                            it++;
+                        }
+
+                    } else {
+                        it++;
+                    }
+                }
+                lock.Unlock();
                 continue;
             } else {
                 lock.Lock();
