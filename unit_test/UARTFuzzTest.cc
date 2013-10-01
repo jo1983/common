@@ -23,7 +23,8 @@
 #include <qcc/SLAPPacket.h>
 #define QCC_MODULE "TEST"
 #define PACKET_SIZE 100
-
+#define WINDOW_SIZE 4
+#define BAUDRATE    115200
 #define RECOVERABLE_ERRORS 1
 #define UNRECOVERABLE_ERRORS 0
 using namespace qcc;
@@ -550,8 +551,11 @@ class MyUARTStream : public UARTStream {
 TEST(UARTFuzzTest, DISABLED_uart_fuzz_test_recoverable)
 {
     //This test introduces some recoverable fuzzing errors in the sent packets.
-    Timer timer("SLAPtimer", true, 4, false, 10);
-    timer.Start();
+    Timer timer0("SLAPtimer0", true, 1, false, 10);
+    timer0.Start();
+
+    Timer timer1("SLAPtimer1", true, 1, false, 10);
+    timer1.Start();
 
     uint8_t rxBuffer[1600];
     memset(&rxBuffer, 'R', sizeof(rxBuffer));
@@ -567,19 +571,19 @@ TEST(UARTFuzzTest, DISABLED_uart_fuzz_test_recoverable)
 
     size_t x;
     UARTFd fd0;
-    QStatus status = UART("/tmp/COM0", 115200, fd0);
+    QStatus status = UART("/tmp/COM0", BAUDRATE, fd0);
     EXPECT_EQ(status, ER_OK);
 
     UARTFd fd1;
-    status = UART("/tmp/COM1", 115200, fd1);
+    status = UART("/tmp/COM1", BAUDRATE, fd1);
     EXPECT_EQ(status, ER_OK);
 
     MyUARTStream* s0 = new MyUARTStream(fd0, RECOVERABLE_ERRORS);
-    SLAPStream h0(s0, timer, 800);
+    SLAPStream h0(s0, timer0, 800, WINDOW_SIZE, BAUDRATE);
     h0.ScheduleLinkControlPacket();
 
     MyUARTStream* s1 = new MyUARTStream(fd1, RECOVERABLE_ERRORS);
-    SLAPStream h1(s1, timer, 1000);
+    SLAPStream h1(s1, timer1, 1000, WINDOW_SIZE, BAUDRATE);
     h1.ScheduleLinkControlPacket();
     IODispatch iodisp("iodisp", 4);
     iodisp.Start();
@@ -608,12 +612,14 @@ TEST(UARTFuzzTest, DISABLED_uart_fuzz_test_recoverable)
     }
     /* Wait for retransmission to finish */
     qcc::Sleep(4000);
-    timer.Stop();
+    timer0.Stop();
+    timer1.Stop();
     uc0.Stop();
     uc1.Stop();
     iodisp.Stop();
 
-    timer.Join();
+    timer0.Join();
+    timer1.Join();
     uc0.Join();
     uc1.Join();
     iodisp.Join();
@@ -628,8 +634,10 @@ TEST(UARTFuzzTest, DISABLED_uart_fuzz_test_unrecoverable)
 {
     //This test introduces some unrecoverable fuzzing errors in the sent packets.
     //This is just to make sure that the program doesnt crash.
-    Timer timer("SLAPtimer", true, 4, false, 10);
-    timer.Start();
+    Timer timer0("SLAPtimer0", true, 1, false, 10);
+    timer0.Start();
+    Timer timer1("SLAPtimer1", true, 1, false, 10);
+    timer1.Start();
 
     uint8_t rxBuffer[1600];
     memset(&rxBuffer, 'R', sizeof(rxBuffer));
@@ -645,20 +653,20 @@ TEST(UARTFuzzTest, DISABLED_uart_fuzz_test_unrecoverable)
 
     size_t x;
     UARTFd fd0;
-    QStatus status = UART("/tmp/COM0", 115200, fd0);
+    QStatus status = UART("/tmp/COM0", BAUDRATE, fd0);
     EXPECT_EQ(status, ER_OK);
 
     UARTFd fd1;
-    status = UART("/tmp/COM1", 115200, fd1);
+    status = UART("/tmp/COM1", BAUDRATE, fd1);
     EXPECT_EQ(status, ER_OK);
 
 
     MyUARTStream* s0 = new MyUARTStream(fd0, UNRECOVERABLE_ERRORS);
-    SLAPStream h0(s0, timer, 1600);
+    SLAPStream h0(s0, timer0, 1600, WINDOW_SIZE, BAUDRATE);
     h0.ScheduleLinkControlPacket();
 
     MyUARTStream* s1 = new MyUARTStream(fd1, UNRECOVERABLE_ERRORS);
-    SLAPStream h1(s1, timer, 1600);
+    SLAPStream h1(s1, timer1, 1600, WINDOW_SIZE, BAUDRATE);
     h1.ScheduleLinkControlPacket();
 
 
@@ -678,12 +686,14 @@ TEST(UARTFuzzTest, DISABLED_uart_fuzz_test_unrecoverable)
     }
     /* Wait for retransmission to finish */
     qcc::Sleep(4000);
-    timer.Stop();
+    timer0.Stop();
+    timer1.Stop();
     uc0.Stop();
     uc1.Stop();
     iodisp.Stop();
 
-    timer.Join();
+    timer0.Join();
+    timer1.Join();
     uc0.Join();
     uc1.Join();
     iodisp.Join();

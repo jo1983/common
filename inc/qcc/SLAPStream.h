@@ -39,10 +39,13 @@ class SLAPStream : public Stream, public UARTReadListener, public AlarmListener 
 
     /**
      * Constructor
-     * @param link	The link associated with this stream.
-     * @param timer     The timer to be used for triggering alarms associated with this stream.
+     * @param link	        The link associated with this stream.
+     * @param timer             The timer to be used for triggering alarms associated with this stream.
+     * @param baudrate          The baudrate for this stream.
+     * @param maxPacketSize     The maximum packet size to be supported by the stream.
+     * @param maxWindowSize     The maximum window size to be supported by the stream.
      */
-    SLAPStream(Stream* rawStream, Timer& timer, uint16_t maxPacketSize = 100, uint16_t maxWindowSize = 4);
+    SLAPStream(Stream* rawStream, Timer& timer, uint16_t maxPacketSize, uint16_t maxWindowSize, uint32_t baudrate);
 
     /** Destructor */
     ~SLAPStream();
@@ -131,6 +134,9 @@ class SLAPStream : public Stream, public UARTReadListener, public AlarmListener 
         uint16_t maxPacketSize;
         uint8_t windowSize;
         uint8_t maxWindowSize;
+        uint32_t baudrate;
+        uint32_t resendTimeout;
+        uint32_t ackTimeout;
     };
     LinkParams m_linkParams;      /**< Parameters associated with the SLAP stream */
 

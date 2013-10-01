@@ -28,6 +28,7 @@
 
 #define QCC_MODULE "SLAP"
 using namespace qcc;
+
 #define SLAP_PROTOCOL_VERSION_NUMBER 0
 #define SLAP_DEFAULT_WINDOW_SIZE 4
 #define SLAP_MAX_WINDOW_SIZE 4
@@ -38,27 +39,22 @@ using namespace qcc;
  */
 //#define ALWAYS_ACK
 
-/**
- * controls the time after which an ack is sent if there are no packets to be sent
- */
-#define PURE_ACK_TIMEOUT 100
+#define MS_PER_SECOND 1000
+
+// 1 start bit, 8 data bits, 1 parity and 2 stop bits. i.e. 11 bits sent per byte.
+#define BITS_SENT_PER_BYTE 11
 
 /**
- * controls rate at which we data packets are resent
+ * controls rate at which we send CONN packets when the link is down in milliseconds
  */
-#define RESEND_TIMEOUT 200
+#define CONN_TIMEOUT   200
 
 /**
- * controls rate at which we send synch packets when the link is down in milliseconds
+ * controls rate at which we send NEGO packets when the link is being established in milliseconds
  */
-#define SYNC_TIMEOUT   200
+#define NEGO_TIMEOUT   200
 
-/**
- * controls how long we will wait for a confirmation packet after we synchronize in milliseconds
- */
-#define CONF_TIMEOUT   200
-
-SLAPStream::SLAPStream(Stream* rawStream, Timer& timer, uint16_t maxPacketSize, uint16_t maxWindowSize) :
+SLAPStream::SLAPStream(Stream* rawStream, Timer& timer, uint16_t maxPacketSize, uint16_t maxWindowSize, uint32_t baudrate) :
     m_rawStream(rawStream),
     m_linkState(LINK_UNINITIALIZED),
     m_sendTimeout(Event::WAIT_FOREVER),
@@ -70,6 +66,7 @@ SLAPStream::SLAPStream(Stream* rawStream, Timer& timer, uint16_t maxPacketSize, 
     m_expectedSeq(0), m_txSeqNum(0),
     m_currentTxAck(0), m_pendingAcks(0)
 {
+    m_linkParams.baudrate = baudrate;
     m_linkParams.packetSize = maxPacketSize;
     m_linkParams.maxPacketSize = maxPacketSize;
 
@@ -87,7 +84,6 @@ SLAPStream::SLAPStream(Stream* rawStream, Timer& timer, uint16_t maxPacketSize, 
     m_rxCurrent = new SLAPReadPacket(32);
     m_txCtrl = new SLAPWritePacket(32);
 }
-
 
 SLAPStream::~SLAPStream()
 {
@@ -254,7 +250,7 @@ void SLAPStream::ProcessDataSeqNum(uint8_t seq)
      */
     while (m_pendingAcks && !m_timer.HasAlarm(m_ackAlarm) && status == ER_TIMER_FULL) {
         AlarmListener* listener = this;
-        uint32_t when = (m_pendingAcks == m_linkParams.windowSize) ? 0 : PURE_ACK_TIMEOUT;
+        uint32_t when = (m_pendingAcks == m_linkParams.windowSize) ? 0 : m_linkParams.ackTimeout;
 
         ackAlarm = Alarm(when, listener, m_ackCtxt);
         /* Call the non-blocking version of AddAlarm, while holding the
@@ -303,7 +299,7 @@ void SLAPStream::ProcessAckNum(uint8_t ack)
     QStatus status = ER_TIMER_FULL;
     while (!m_txSent.empty()  && !m_timer.HasAlarm(m_resendAlarm) && status == ER_TIMER_FULL) {
         AlarmListener* listener = this;
-        uint32_t when = RESEND_TIMEOUT;
+        uint32_t when = m_linkParams.resendTimeout;
 
         resendAlarm = Alarm(when, listener, m_resendDataCtxt);
         /* Call the non-blocking version of AddAlarm, while holding the
@@ -454,7 +450,7 @@ void SLAPStream::ProcessControlPacket()
              * Check that the configuration response is valid.
              */
             if (m_linkParams.packetSize > m_linkParams.packetSize) {
-                QCC_LogError(ER_OK, ("Configuration failed - device is not configuring link correctly %d %d", m_linkParams.packetSize, m_linkParams.maxPacketSize));
+                QCC_LogError(ER_FAIL, ("Configuration failed - device is not configuring link correctly %d %d", m_linkParams.packetSize, m_linkParams.maxPacketSize));
                 m_linkState = LINK_DEAD;
                 return;
             }
@@ -462,7 +458,7 @@ void SLAPStream::ProcessControlPacket()
              * Check that the configuration response is valid.
              */
             if (m_linkParams.windowSize > m_linkParams.maxWindowSize) {
-                QCC_LogError(ER_OK, ("Configuration failed - device is not configuring link correctly %d %d", m_linkParams.windowSize, m_linkParams.maxWindowSize));
+                QCC_LogError(ER_FAIL, ("Configuration failed - device is not configuring link correctly %d %d", m_linkParams.windowSize, m_linkParams.maxWindowSize));
                 m_linkState = LINK_DEAD;
                 return;
             }
@@ -481,6 +477,13 @@ void SLAPStream::ProcessControlPacket()
             m_rxCurrent = new SLAPReadPacket(m_linkParams.packetSize);
             QCC_DbgPrintf(("Link configured - packetsize =%d window size = %d", m_linkParams.packetSize,
                            m_linkParams.windowSize));
+
+            /* Re-calculate timeouts based on the agreed packet size */
+            /* Ack timeout should be twice the amount of max transmission time per packet. */
+            m_linkParams.ackTimeout = (m_linkParams.packetSize * BITS_SENT_PER_BYTE * MS_PER_SECOND * 2) / m_linkParams.baudrate;
+
+            /* Resend timeout should be thrice the amount of max transmission time per packet. */
+            m_linkParams.resendTimeout = (m_linkParams.packetSize * BITS_SENT_PER_BYTE * MS_PER_SECOND * 3) / m_linkParams.baudrate;
 
             m_linkState = LINK_ACTIVE;
             m_sinkEvent.SetEvent();
@@ -590,7 +593,7 @@ void SLAPStream::TransmitToLink()
     status = ER_TIMER_FULL;
     while (!m_txSent.empty() && !m_timer.HasAlarm(m_resendAlarm) && status == ER_TIMER_FULL) {
         AlarmListener* listener = this;
-        uint32_t when = RESEND_TIMEOUT;
+        uint32_t when = m_linkParams.resendTimeout;
 
         resendAlarm = Alarm(when, listener, m_resendDataCtxt);
         /* Call the non-blocking version of AddAlarm, while holding the
@@ -630,7 +633,7 @@ QStatus SLAPStream::ScheduleLinkControlPacket() {
          */
         //assert(!m_timer.HasAlarm(m_ctrlAlarm));
         EnqueueCtrl(CONN_PKT);
-        when = SYNC_TIMEOUT;
+        when = CONN_TIMEOUT;
 
         m_ctrlAlarm = Alarm(when, listener, m_resendControlCtxt);
         addCtrlAlarm = true;
@@ -643,7 +646,7 @@ QStatus SLAPStream::ScheduleLinkControlPacket() {
          * Send a conf packet.
          */
         EnqueueCtrl(NEGO_PKT, m_configField);
-        when = CONF_TIMEOUT;
+        when = NEGO_TIMEOUT;
         m_ctrlAlarm = Alarm(when, listener, m_resendControlCtxt);
 
         addCtrlAlarm = true;
@@ -835,7 +838,6 @@ void SLAPStream::AlarmTriggered(const Alarm& alarm, QStatus reason)
         m_streamLock.Unlock(MUTEX_CONTEXT);
         return;
     }
-
     switch (ctxt->type) {
     case SEND_DATA_ALARM:
         /*
