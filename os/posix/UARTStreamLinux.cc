@@ -138,9 +138,9 @@ QStatus UART(qcc::String devName, uint32_t speed, UARTFd& fd)
     cfsetospeed(&ttySettings, baudrate);
     cfsetispeed(&ttySettings, baudrate);
 
-    /* baudrate - 8 - E - 1 */
+    /* baudrate - 8 - N - 1 */
     ttySettings.c_iflag |= INPCK;
-    ttySettings.c_cflag |= CS8 | CLOCAL | CREAD | PARENB;
+    ttySettings.c_cflag |= CS8 | CLOCAL | CREAD;
 
     tcflush(fd, TCIOFLUSH);
 
