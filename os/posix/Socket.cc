@@ -5,7 +5,7 @@
  */
 
 /******************************************************************************
- * Copyright 2009-2011, Qualcomm Innovation Center, Inc.
+ * Copyright 2009-2013 Qualcomm Innovation Center, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -244,9 +244,9 @@ QStatus Connect(SocketFd sockfd, const char* pathName)
     ret = connect(static_cast<int>(sockfd), reinterpret_cast<struct sockaddr*>(&addr), addrLen);
     if (ret == -1) {
         status = ER_OS_ERROR;
-        QCC_LogError(status, ("Connecting (sockfd = %u) to %s : %d - %s", sockfd,
-                              pathName,
-                              errno, strerror(errno)));
+        QCC_DbgHLPrintf(("Connecting (sockfd = %u) to %s : %d - %s", sockfd,
+                         pathName,
+                         errno, strerror(errno)));
     } else {
         int flags = fcntl(sockfd, F_GETFL, 0);
         ret = fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);

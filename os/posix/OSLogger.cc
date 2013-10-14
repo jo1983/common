@@ -6,7 +6,7 @@
 
 /******************************************************************************
  *
- * Copyright 2012, Qualcomm Innovation Center, Inc.
+ * Copyright 2012-2013, Qualcomm Innovation Center, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -40,15 +40,15 @@ static void AndroidLogCB(DbgMsgType type, const char* module, const char* msg, v
         break;
 
     case DBG_HIGH_LEVEL:
-        priority = ANDROID_LOG_WARN;
-        break;
-
-    case DBG_GEN_MESSAGE:
         priority = ANDROID_LOG_INFO;
         break;
 
-    case DBG_API_TRACE:
+    case DBG_GEN_MESSAGE:
         priority = ANDROID_LOG_DEBUG;
+        break;
+
+    case DBG_API_TRACE:
+        priority = ANDROID_LOG_VERBOSE;
         break;
 
     default:
