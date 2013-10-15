@@ -121,7 +121,7 @@ status_obj = [];
 if commonenv.has_key('BUILD_COMMON_STATUS'):
     status_src, status_hdr = commonenv.Status('$OBJDIR/Status')
     status_obj = commonenv.Object(status_src)
-    commonenv.Append(CPPPATH = [os.path.dirname(str(status_hdr))])
+    commonenv.Append(CPPPATH = ['#' + os.path.dirname(str(status_hdr))])
 else:
     # allow common to "#include <Status.h>" when building all of AllJoyn
     commonenv.Append(CPPPATH = ['$DISTDIR/cpp/inc/alljoyn'])
